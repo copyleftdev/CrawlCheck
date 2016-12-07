@@ -5,8 +5,6 @@ import xmlrunner
 import ConfigParser
 
 
-
-# Settings are located in conf/settings.cfg
 config = ConfigParser.RawConfigParser()
 config.read('conf/settings.cfg')
 base_url = config.get('target', 'server')
@@ -22,7 +20,7 @@ def dedupe(seq):
 def collect_links(url):
     """Collect <a> hregs tags from a given url"""
     exclude_pattern = ['tel', 'javascript', 'google', 'youtube', 'j2global',
-                       'linkedin', 'facebook', 'twitter' ,'backup']
+                       'linkedin', 'facebook', 'twitter', 'backup']
     collected_links = []
     r = requests.get(url)
     soup = bs(r.content, "html.parser")
@@ -35,7 +33,6 @@ def collect_links(url):
         else:
             collected_links.append(l['href'])
     return dedupe(collected_links)
-
 
 
 def compile_test_list(url):
@@ -62,8 +59,9 @@ class CrawlerTests(type):
 
         for tname, a, b in compile_test_list(base_url):
             test_name = "test_%s" % tname
-            dict[test_name] = gen_test(a,b)
+            dict[test_name] = gen_test(a, b)
         return type.__new__(mcs, name, bases, dict)
+
 
 class CrawlerTestSequence(unittest.TestCase):
     __metaclass__ = CrawlerTests
