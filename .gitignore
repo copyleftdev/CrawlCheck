@@ -1,0 +1,4 @@
+scratch.py
+*.pyc
+*.DS_Store
+*test-reports/
