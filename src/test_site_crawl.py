@@ -6,7 +6,7 @@ import re
 from selenium import webdriver
 
 
-base_url = "http://www.fuq.com"
+base_url = "http://www.efax.com"
 
 
 
