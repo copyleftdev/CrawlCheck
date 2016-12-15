@@ -2,12 +2,12 @@ import requests
 from bs4 import BeautifulSoup as bs
 import unittest
 import xmlrunner
-import ConfigParser
+import re
+from selenium import webdriver
 
 
-config = ConfigParser.RawConfigParser()
-config.read('conf/settings.cfg')
-base_url = config.get('target', 'server')
+base_url = "http://www.fuq.com"
+
 
 
 def dedupe(seq):
@@ -18,21 +18,26 @@ def dedupe(seq):
 
 
 def collect_links(url):
-    """Collect <a> hregs tags from a given url"""
-    exclude_pattern = ['tel', 'javascript', 'google', 'youtube', 'j2global',
-                       'linkedin', 'facebook', 'twitter', 'backup']
-    collected_links = []
-    r = requests.get(url)
+    headers = {'User-Agent':
+               'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) \
+                AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 \
+                Safari/537.36'}
+
+    schemes = ["https", "http"]
+    link_collection = []
+    urlp = r"^((http[s]?|ftp):\/)?\/?([^:\/\s]+)((\/\w+)*\/)([\w\-\.]+[^#?\s]+)(.*)?(#[\w\-]+)?$"
+    r = requests.get(url, headers=headers)
     soup = bs(r.content, "html.parser")
-    page_links = soup.find_all('a')
-    for l in page_links:
-        if any(x in l['href'] for x in exclude_pattern):
-            continue
-        elif 'http' not in l['href']:
-            collected_links.append('{}{}'.format(base_url, l['href']))
+
+    for each_link in soup.findAll('a', href=re.compile(urlp)):
+        if any(x in each_link['href'] for x in schemes):
+            link_collection.append(each_link['href'])
         else:
-            collected_links.append(l['href'])
-    return dedupe(collected_links)
+            link_collection.append("{}{}".format(url, each_link['href']))
+
+
+
+    return dedupe([x for x in  link_collection if url in x])
 
 
 def compile_test_list(url):
@@ -46,13 +51,15 @@ def compile_test_list(url):
         test_vectors.append(["{}".format(test_name), el, 200])
     return test_vectors
 
-
 # creats single tests for each item return from compiled_test_list()
+
+
 class CrawlerTests(type):
     def __new__(mcs, name, bases, dict):
 
         def gen_test(a, b):
             def test(self):
+                """Testing {} for a response of 200""".format(a)
                 r = requests.get(a)
                 self.assertEqual(r.status_code, b)
             return test
